@@ -51,7 +51,7 @@ func main() {
 
 	repos := repository.NewRepository(db)
 	services := service.NewService(repos)
-	handlers := handler.NewService(services)
+	handlers := handler.NewHandler(services)
 
 	srv := new(todo.Server)
 	go func() {
