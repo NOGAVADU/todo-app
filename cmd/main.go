@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/nogavadu/todo-app"
@@ -10,6 +11,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
@@ -34,13 +37,31 @@ func main() {
 	if err != nil {
 		logrus.Fatalf("failed to initialize db: %s", err.Error())
 	}
+
 	repos := repository.NewRepository(db)
 	services := service.NewService(repos)
 	handlers := handler.NewService(services)
-	srv := new(todo.Sever)
 
-	if err := srv.Start(viper.GetString("port"), handlers.InitRoutes()); err != nil {
-		logrus.Fatalf("failed to start server: %s", err.Error())
+	srv := new(todo.Server)
+	go func() {
+		if err = srv.Start(viper.GetString("port"), handlers.InitRoutes()); err != nil {
+			logrus.Fatalf("failed to start server: %s", err.Error())
+		}
+	}()
+
+	logrus.Printf("server started on port=%s", viper.GetString("port"))
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
+	<-quit
+
+	logrus.Print("server shutting down")
+
+	if err = srv.Stop(context.Background()); err != nil {
+		logrus.Errorf("error occured on server shutting down: %s", err.Error())
+	}
+	if err = db.Close(); err != nil {
+		logrus.Errorf("error occured on db connetction close: %s", err.Error())
 	}
 }
 
