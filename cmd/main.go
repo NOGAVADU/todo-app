@@ -15,6 +15,17 @@ import (
 	"syscall"
 )
 
+// @title TODOLIST RESTFUL APP
+// @version 1.0
+// @description Just API Server for TodoList application
+
+// @host localhost:8000
+// @BasePath /
+
+// @securityDefinitions.apiKey ApiKeyAuth
+// @in header
+// @name Authorization
+
 func main() {
 	initLogger()
 
